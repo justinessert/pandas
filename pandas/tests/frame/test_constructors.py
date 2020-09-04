@@ -1181,6 +1181,21 @@ class TestDataFrameConstructors:
         result = DataFrame([iter(range(10)), iter(range(10))])
         expected = DataFrame([list(range(10)), list(range(10))])
         tm.assert_frame_equal(result, expected)
+    
+    @pytest.mark.parametrize(
+        "arr,dtype",
+        [
+            (3*[pd.Period('2020-01')], 'period[M]'),
+            (3*[pd.Interval(1,2)], 'interval[int64]'),
+            (np.array(3*[pd.Period('2020-01')]), 'period[M]'),
+            (np.array(3*[pd.Interval(1,2)]), 'interval[int64]'),
+        ],
+    )
+    def test_constructor_list_of_extension_type(self, arr, dtype):
+        df = pd.DataFrame(arr, columns=['A'])
+
+        assert df['A'].dtype == dtype
+
 
     def test_constructor_generator(self):
         # related #2305

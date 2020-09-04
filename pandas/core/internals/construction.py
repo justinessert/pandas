@@ -37,7 +37,7 @@ from pandas.core.dtypes.generic import (
 
 from pandas.core import algorithms, common as com
 from pandas.core.arrays import Categorical
-from pandas.core.construction import extract_array, sanitize_array
+from pandas.core.construction import array, extract_array, sanitize_array
 from pandas.core.indexes import base as ibase
 from pandas.core.indexes.api import (
     Index,
@@ -170,8 +170,16 @@ def init_ndarray(values, index, columns, dtype: Optional[DtypeObj], copy: bool):
 
         index, columns = _get_axes(len(values), 1, index, columns)
         return arrays_to_mgr([values], columns, index, columns, dtype=dtype)
-    elif is_extension_array_dtype(values) or is_extension_array_dtype(dtype):
+    elif (
+        is_extension_array_dtype(values)
+        or is_extension_array_dtype(dtype)
+        or lib.infer_dtype(values) in {"interval", "period"}
+    ):
         # GH#19157
+
+        if not (is_extension_array_dtype(values) and is_extension_array_dtype(dtype)):
+            # If list of intervals/periods, convert to extension array
+            values = array(values)
 
         if isinstance(values, np.ndarray) and values.ndim > 1:
             # GH#12513 a EA dtype passed with a 2D array, split into
